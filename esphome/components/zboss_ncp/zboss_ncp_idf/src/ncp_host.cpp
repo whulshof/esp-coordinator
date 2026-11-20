@@ -98,6 +98,27 @@ extern "C" void ncp_get_status(ncp_status_t* out) {
     out->safe_mode = boot_guard::safe_mode();
 }
 
+// Signal window: noted on the Zigbee task for every received APS frame
+// (main/rx_stats.h), taken by ESPHome's loop.
+static portMUX_TYPE s_rx_lock = portMUX_INITIALIZER_UNLOCKED;
+static ncp_rx_stats_t s_rx = {};
+
+extern "C" void ncp_host_rx_note(int8_t rssi, uint8_t lqi) {
+    portENTER_CRITICAL(&s_rx_lock);
+    if (s_rx.frames == 0 || rssi < s_rx.rssi_min) s_rx.rssi_min = rssi;
+    s_rx.frames++;
+    s_rx.rssi_sum += rssi;
+    s_rx.lqi_sum += lqi;
+    portEXIT_CRITICAL(&s_rx_lock);
+}
+
+extern "C" void ncp_rx_stats_take(ncp_rx_stats_t* out) {
+    portENTER_CRITICAL(&s_rx_lock);
+    if (out) *out = s_rx;
+    s_rx = {};
+    portEXIT_CRITICAL(&s_rx_lock);
+}
+
 extern "C" const char* zboss_ncp_version(void) { return FW_VERSION_STRING; }
 
 // Only the info page (not in this build) reads these; ESPHome reports IP and RSSI itself.

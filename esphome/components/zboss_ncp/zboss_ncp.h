@@ -38,6 +38,10 @@ class ZbossNcpComponent : public PollingComponent {
   void set_network_lost_sensor(binary_sensor::BinarySensor *s) { this->network_lost_sensor_ = s; }
   void set_safe_mode_sensor(binary_sensor::BinarySensor *s) { this->safe_mode_sensor_ = s; }
   void set_antenna_select(select::Select *s) { this->antenna_select_ = s; }
+  void set_rssi_sensor(sensor::Sensor *s) { this->rssi_sensor_ = s; }
+  void set_rssi_min_sensor(sensor::Sensor *s) { this->rssi_min_sensor_ = s; }
+  void set_lqi_sensor(sensor::Sensor *s) { this->lqi_sensor_ = s; }
+  void set_rx_frames_sensor(sensor::Sensor *s) { this->rx_frames_sensor_ = s; }
 
   // Seeed XIAO ESP32-C6 RF switch: false = on-board antenna, true = U.FL.
   // Saved; applied once the Zigbee stack is up and on every change.
@@ -72,6 +76,13 @@ class ZbossNcpComponent : public PollingComponent {
   binary_sensor::BinarySensor *network_lost_sensor_{nullptr};
   binary_sensor::BinarySensor *safe_mode_sensor_{nullptr};
   select::Select *antenna_select_{nullptr};
+  // Signal of the received Zigbee frames, per window of SIGNAL_WINDOW_MS.
+  void publish_signal_();
+  uint32_t signal_window_start_{0};
+  sensor::Sensor *rssi_sensor_{nullptr};
+  sensor::Sensor *rssi_min_sensor_{nullptr};
+  sensor::Sensor *lqi_sensor_{nullptr};
+  sensor::Sensor *rx_frames_sensor_{nullptr};
 };
 
 class AntennaSelect : public select::Select, public Parented<ZbossNcpComponent> {

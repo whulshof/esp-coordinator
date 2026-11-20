@@ -38,6 +38,7 @@ static constexpr uint32_t RADIO_READY_TIMEOUT_MS = 5000;
 // External antenna chosen but no WiFi connection within this time: back to
 // the on-board antenna (an empty U.FL connector would cut off OTA and API).
 static constexpr uint32_t ANTENNA_FALLBACK_MS = 120000;
+static constexpr uint32_t SIGNAL_WINDOW_MS = 60000;
 // XIAO ESP32-C6 RF switch (not on the header): GPIO3 low enables the switch
 // control, GPIO14 selects the antenna (high = U.FL). See main/main.cpp.
 static constexpr gpio_num_t ANT_ENABLE_PIN = GPIO_NUM_3;
@@ -196,6 +197,8 @@ void ZbossNcpComponent::update() {
     this->network_lost_sensor_->publish_state(st.network_lost);
   if (this->safe_mode_sensor_ != nullptr)
     this->safe_mode_sensor_->publish_state(st.safe_mode);
+  if (millis() - this->signal_window_start_ >= SIGNAL_WINDOW_MS)
+    this->publish_signal_();
   if (!st.valid || !st.joined)
     return;
   if (this->channel_sensor_ != nullptr && st.channel != 0xFF)
@@ -213,6 +216,27 @@ void ZbossNcpComponent::update() {
       p += snprintf(p, 4, i ? "%02x:" : "%02x", st.ext_pan_id[i]);
     this->ext_pan_id_sensor_->publish_state(buf);
   }
+}
+
+// One window of received frames: the averages say how well the coordinator
+// hears its network as a whole (the mix of senders varies), the minimum is
+// its weakest frame. No frames: the signal sensors go unknown.
+void ZbossNcpComponent::publish_signal_() {
+  this->signal_window_start_ = millis();
+  if (this->rssi_sensor_ == nullptr && this->rssi_min_sensor_ == nullptr && this->lqi_sensor_ == nullptr &&
+      this->rx_frames_sensor_ == nullptr)
+    return;
+  ncp_rx_stats_t rx;
+  ncp_rx_stats_take(&rx);
+  bool any = rx.frames > 0;
+  if (this->rx_frames_sensor_ != nullptr)
+    this->rx_frames_sensor_->publish_state(rx.frames);
+  if (this->rssi_sensor_ != nullptr)
+    this->rssi_sensor_->publish_state(any ? static_cast<float>(rx.rssi_sum) / rx.frames : NAN);
+  if (this->rssi_min_sensor_ != nullptr)
+    this->rssi_min_sensor_->publish_state(any ? rx.rssi_min : NAN);
+  if (this->lqi_sensor_ != nullptr)
+    this->lqi_sensor_->publish_state(any ? static_cast<float>(rx.lqi_sum) / rx.frames : NAN);
 }
 
 void ZbossNcpComponent::dump_config() {

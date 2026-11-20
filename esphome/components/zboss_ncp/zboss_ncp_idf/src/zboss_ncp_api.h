@@ -51,6 +51,17 @@ typedef struct {
 
 void ncp_get_status(ncp_status_t* out);
 
+// Signal of the Zigbee frames received since the previous call (the last hop
+// into the coordinator, whoever sent it). Starts a new window. Any task.
+typedef struct {
+    uint32_t frames;    // 0: the other fields mean nothing
+    int32_t  rssi_sum;  // dBm, divide by frames
+    uint32_t lqi_sum;   // 0-255, divide by frames
+    int8_t   rssi_min;  // weakest frame, dBm
+} ncp_rx_stats_t;
+
+void ncp_rx_stats_take(ncp_rx_stats_t* out);
+
 const char* zboss_ncp_version(void);
 
 #ifdef __cplusplus

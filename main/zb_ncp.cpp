@@ -1,4 +1,5 @@
 #include "zb_ncp.h"
+#include "rx_stats.h"
 #include "boot_guard.h"
 #include "commands.h"
 #include "protocol.h"
@@ -502,6 +503,7 @@ static zb_uint8_t data_indication(zb_bufid_t param) {
       write_u16(ind->mac_dst_addr); //  {name: 'dstMAC', type: DataType.UINT16},
       write_u8(ind->lqi); //  {name: 'lqi', type: DataType.UINT8},
       write_u8(ind->rssi); //  {name: 'rssi', type: DataType.UINT8},
+      ncp_rx_note(ind->rssi, ind->lqi);  // last hop into the coordinator
       write_u8(ind->aps_key_source|(ind->aps_key_attrs<<1)|(ind->aps_key_from_tc<<3)|(ind->extended_fc<<4)); //  {name: 'apsKey', type: DataType.UINT8},
       
       ::memcpy(out,begin,len);

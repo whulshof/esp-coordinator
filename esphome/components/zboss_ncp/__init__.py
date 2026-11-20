@@ -57,6 +57,10 @@ CONF_HOST_CONNECTED = "host_connected"
 CONF_NETWORK_LOST = "network_lost"
 CONF_SAFE_MODE = "safe_mode"
 CONF_FIRMWARE_VERSION = "firmware_version"
+CONF_RSSI = "rssi"
+CONF_RSSI_MIN = "rssi_min"
+CONF_LQI = "lqi"
+CONF_RX_FRAMES = "rx_frames"
 
 zboss_ncp_ns = cg.esphome_ns.namespace("zboss_ncp")
 ZbossNcpComponent = zboss_ncp_ns.class_(
@@ -112,6 +116,35 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CHANNEL): sensor.sensor_schema(
                 accuracy_decimals=0,
                 icon="mdi:zigbee",
+                state_class=STATE_CLASS_MEASUREMENT,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            ),
+            # Signal of the Zigbee frames the coordinator received in the last
+            # minute (the last hop into it): average and weakest RSSI, average
+            # LQI, and how many frames that was.
+            cv.Optional(CONF_RSSI): sensor.sensor_schema(
+                unit_of_measurement="dBm",
+                accuracy_decimals=0,
+                device_class="signal_strength",
+                state_class=STATE_CLASS_MEASUREMENT,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            ),
+            cv.Optional(CONF_RSSI_MIN): sensor.sensor_schema(
+                unit_of_measurement="dBm",
+                accuracy_decimals=0,
+                device_class="signal_strength",
+                state_class=STATE_CLASS_MEASUREMENT,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            ),
+            cv.Optional(CONF_LQI): sensor.sensor_schema(
+                accuracy_decimals=0,
+                icon="mdi:signal",
+                state_class=STATE_CLASS_MEASUREMENT,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            ),
+            cv.Optional(CONF_RX_FRAMES): sensor.sensor_schema(
+                accuracy_decimals=0,
+                icon="mdi:message-arrow-left",
                 state_class=STATE_CLASS_MEASUREMENT,
                 entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
             ),
@@ -268,6 +301,14 @@ async def to_code(config):
 
     if conf := config.get(CONF_CHANNEL):
         cg.add(var.set_channel_sensor(await sensor.new_sensor(conf)))
+    for key, setter in (
+        (CONF_RSSI, var.set_rssi_sensor),
+        (CONF_RSSI_MIN, var.set_rssi_min_sensor),
+        (CONF_LQI, var.set_lqi_sensor),
+        (CONF_RX_FRAMES, var.set_rx_frames_sensor),
+    ):
+        if conf := config.get(key):
+            cg.add(setter(await sensor.new_sensor(conf)))
     if conf := config.get(CONF_PAN_ID):
         cg.add(var.set_pan_id_sensor(await text_sensor.new_text_sensor(conf)))
     if conf := config.get(CONF_EXT_PAN_ID):
