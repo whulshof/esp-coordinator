@@ -46,6 +46,7 @@ typedef struct {
     uint8_t  ext_pan_id[8];  // as ZBOSS returns it (little-endian)
     bool     network_lost;   // stored network vanished (silent-wipe alarm)
     bool     host_connected; // a host (z2m/ZHA) is the active TCP client
+    uint32_t host_ip;        // IPv4 of the connected TCP client (network order), 0 = none
     bool     safe_mode;      // boot guard: ZBOSS not started
 } ncp_status_t;
 

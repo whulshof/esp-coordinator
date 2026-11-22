@@ -95,6 +95,7 @@ extern "C" void ncp_get_status(ncp_status_t* out) {
     }
     out->network_lost = g_network_lost;
     out->host_connected = transport::tcp_route_active();
+    out->host_ip = transport::tcp_peer_ip();
     out->safe_mode = boot_guard::safe_mode();
 }
 

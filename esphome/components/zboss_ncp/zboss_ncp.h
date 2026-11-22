@@ -35,6 +35,7 @@ class ZbossNcpComponent : public PollingComponent {
   void set_ext_pan_id_sensor(text_sensor::TextSensor *s) { this->ext_pan_id_sensor_ = s; }
   void set_version_sensor(text_sensor::TextSensor *s) { this->version_sensor_ = s; }
   void set_host_connected_sensor(binary_sensor::BinarySensor *s) { this->host_connected_sensor_ = s; }
+  void set_host_sensor(text_sensor::TextSensor *s) { this->host_sensor_ = s; }
   void set_network_lost_sensor(binary_sensor::BinarySensor *s) { this->network_lost_sensor_ = s; }
   void set_safe_mode_sensor(binary_sensor::BinarySensor *s) { this->safe_mode_sensor_ = s; }
   void set_antenna_select(select::Select *s) { this->antenna_select_ = s; }
@@ -73,6 +74,7 @@ class ZbossNcpComponent : public PollingComponent {
   text_sensor::TextSensor *ext_pan_id_sensor_{nullptr};
   text_sensor::TextSensor *version_sensor_{nullptr};
   binary_sensor::BinarySensor *host_connected_sensor_{nullptr};
+  text_sensor::TextSensor *host_sensor_{nullptr};
   binary_sensor::BinarySensor *network_lost_sensor_{nullptr};
   binary_sensor::BinarySensor *safe_mode_sensor_{nullptr};
   select::Select *antenna_select_{nullptr};

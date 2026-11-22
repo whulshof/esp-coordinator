@@ -39,6 +39,8 @@ private:
                                                (FreeRTOS stream buffers are single-writer) */
 
 	std::atomic<uint8_t> m_active{IFACE_NONE};
+	std::atomic<uint32_t> m_tcp_peer{0};
+	void note_tcp_peer(int fd);
 
 	uint8_t m_temp_buf[BUF_SIZE];
 
@@ -127,6 +129,9 @@ public:
 	// TCP client dying must not abort a restore streaming over UART
 	// (merge-review finding, 2026-07-19).
 	static bool tcp_route_active() { return instance().m_active.load() == IFACE_TCP; }
+
+	// IPv4 (network byte order) of the connected TCP client, 0 = none.
+	static uint32_t tcp_peer_ip() { return instance().m_tcp_peer.load(); }
 
 	static esp_err_t send(const void* data,size_t size) { return instance().send_int(data,size); }
 

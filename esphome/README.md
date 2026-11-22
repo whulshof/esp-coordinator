@@ -47,6 +47,7 @@ zboss_ncp:
   pan_id:           { name: Zigbee PAN ID }
   extended_pan_id:  { name: Zigbee extended PAN ID }
   firmware_version: { name: NCP firmware }
+  host:             { name: Zigbee host }
   host_connected:   { name: Zigbee host connected }
   network_lost:     { name: Zigbee network lost }
   safe_mode:        { name: NCP safe mode }

@@ -193,6 +193,16 @@ void ZbossNcpComponent::update() {
 
   if (this->host_connected_sensor_ != nullptr)
     this->host_connected_sensor_->publish_state(st.host_connected);
+  if (this->host_sensor_ != nullptr) {
+    // The TCP client, connected or still waiting for its first frame.
+    char buf[16] = "none";
+    if (st.host_ip != 0) {
+      const uint8_t *b = reinterpret_cast<const uint8_t *>(&st.host_ip);
+      snprintf(buf, sizeof(buf), "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+    }
+    if (!this->host_sensor_->has_state() || this->host_sensor_->state != buf)
+      this->host_sensor_->publish_state(buf);
+  }
   if (this->network_lost_sensor_ != nullptr)
     this->network_lost_sensor_->publish_state(st.network_lost);
   if (this->safe_mode_sensor_ != nullptr)

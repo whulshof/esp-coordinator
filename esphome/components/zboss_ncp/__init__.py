@@ -54,6 +54,7 @@ ANTENNA_OPTIONS = ["On-board", "External (U.FL)"]
 CONF_PAN_ID = "pan_id"
 CONF_EXT_PAN_ID = "extended_pan_id"
 CONF_HOST_CONNECTED = "host_connected"
+CONF_HOST = "host"
 CONF_NETWORK_LOST = "network_lost"
 CONF_SAFE_MODE = "safe_mode"
 CONF_FIRMWARE_VERSION = "firmware_version"
@@ -156,6 +157,9 @@ CONFIG_SCHEMA = cv.All(
             ),
             cv.Optional(CONF_FIRMWARE_VERSION): text_sensor.text_sensor_schema(
                 icon="mdi:chip", entity_category=ENTITY_CATEGORY_DIAGNOSTIC
+            ),
+            cv.Optional(CONF_HOST): text_sensor.text_sensor_schema(
+                icon="mdi:lan-connect", entity_category=ENTITY_CATEGORY_DIAGNOSTIC
             ),
             cv.Optional(CONF_HOST_CONNECTED): binary_sensor.binary_sensor_schema(
                 device_class="connectivity",
@@ -315,6 +319,8 @@ async def to_code(config):
         cg.add(var.set_ext_pan_id_sensor(await text_sensor.new_text_sensor(conf)))
     if conf := config.get(CONF_FIRMWARE_VERSION):
         cg.add(var.set_version_sensor(await text_sensor.new_text_sensor(conf)))
+    if conf := config.get(CONF_HOST):
+        cg.add(var.set_host_sensor(await text_sensor.new_text_sensor(conf)))
     if conf := config.get(CONF_HOST_CONNECTED):
         cg.add(var.set_host_connected_sensor(await binary_sensor.new_binary_sensor(conf)))
     if conf := config.get(CONF_NETWORK_LOST):

@@ -638,7 +638,7 @@ void transport::tcp_task_int() {
 		m_tcp_pending_de = false;
 		{
 			utils::sem_lock l(m_tcp_fd_sem);
-			m_tcp_sock = cs;
+			m_tcp_sock = cs; note_tcp_peer(cs);
 		}
 		ESP_LOGI(TAG, "NCP client connected");
 
@@ -653,7 +653,7 @@ void transport::tcp_task_int() {
 		auto teardown_active = [&]() {
 			{
 				utils::sem_lock l(m_tcp_fd_sem);
-				m_tcp_sock = -1;
+				m_tcp_sock = -1; m_tcp_peer.store(0);
 				::close(cs);
 			}
 			ESP_LOGW(TAG, "NCP client disconnected");
@@ -743,7 +743,7 @@ void transport::tcp_task_int() {
 						// tell rx_qualified_pump a 0xDE preceded so it re-injects
 						// it. Otherwise the DE-AD is in this buffer and it re-finds.
 						m_tcp_pending_de = (hit == -1);
-						{ utils::sem_lock l(m_tcp_fd_sem); m_tcp_sock = cs; }
+						{ utils::sem_lock l(m_tcp_fd_sem); m_tcp_sock = cs; note_tcp_peer(cs); }
 						rx_qualified_pump(IFACE_TCP, m_tcp_pending_de, m_tcp_temp_buf, r);
 						continue;
 					}
@@ -761,7 +761,7 @@ void transport::tcp_task_int() {
 						teardown_active();
 						cs = nb; nb = -1;
 						m_tcp_pending_de = nb_pending_de;
-						{ utils::sem_lock l(m_tcp_fd_sem); m_tcp_sock = cs; }
+						{ utils::sem_lock l(m_tcp_fd_sem); m_tcp_sock = cs; note_tcp_peer(cs); }
 						continue;
 					}
 					break;
@@ -783,7 +783,7 @@ void transport::tcp_task_int() {
 		// the link-state reset happens at next qualification anyway.
 		{
 			utils::sem_lock l(m_tcp_fd_sem);
-			m_tcp_sock = -1;
+			m_tcp_sock = -1; m_tcp_peer.store(0);
 			::close(cs);
 		}
 		ESP_LOGW(TAG, "NCP client disconnected");
@@ -804,6 +804,14 @@ void transport::tcp_task_int() {
 		app::ctx_t ev = { .event = app::EVENT_TCP_DISCONNECT, .size = 0 };
 		app::send_event(ev);
 	}
+}
+
+// IPv4 of the active TCP client (network byte order) for the ESPHome
+// status; set by tcp_task itself so readers never take m_tcp_fd_sem.
+void transport::note_tcp_peer(int fd) {
+	struct sockaddr_in a = {};
+	socklen_t l = sizeof(a);
+	m_tcp_peer.store(::getpeername(fd, reinterpret_cast<struct sockaddr*>(&a), &l) == 0 ? a.sin_addr.s_addr : 0);
 }
 
 void transport::close_tcp_client() {
