@@ -124,7 +124,11 @@ static void deadline_cb(void*)
     // hang class. Reboot so the failure count can accumulate; after
     // BOOT_FAIL_LIMIT of these the next boot enters safe mode.
     ESP_LOGE("BOOT", "boot guard: ZBOSS init deadline expired, restarting");
-    ncp_restart();
+    // esp_restart(), not ncp_restart(): this runs in the esp_timer task, and
+    // ESPHome's reboot path (ncp_host_restart) waits there for up to 5 s,
+    // which esp_timer callbacks must not do. A boot-guard recovery needs no
+    // shutdown hooks.
+    esp_restart();
 }
 
 void init()
@@ -147,7 +151,8 @@ void init()
         s_safe_mode = true;
         ESP_LOGE("BOOT", "boot guard: entering SAFE MODE (no ZBOSS)");
         const esp_timer_create_args_t heal_args = {
-            .callback = [](void*) { boot_guard::clear(); ncp_restart(); },
+            // esp_restart() for the same reason as deadline_cb.
+            .callback = [](void*) { boot_guard::clear(); esp_restart(); },
             .arg = nullptr,
             .dispatch_method = ESP_TIMER_TASK,
             .name = "bootheal",

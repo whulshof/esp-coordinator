@@ -147,7 +147,10 @@ def main():
         return
     raw = read_image(path)
     if not yes:
-        answer = input(f"Replace the Zigbee network on {host}:{port} with {path}? [y/N] ")
+        try:
+            answer = input(f"Replace the Zigbee network on {host}:{port} with {path}? [y/N] ")
+        except EOFError:          # no terminal: counts as "no"
+            answer = ""
         if answer.strip().lower() not in ("y", "yes"):
             sys.exit("restore cancelled")
     restore(Ncp(host, port), path, raw)
